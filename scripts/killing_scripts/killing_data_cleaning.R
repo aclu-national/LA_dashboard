@@ -10,7 +10,7 @@ library(clipr)
 library(googlesheets4)
 
 # Date of updated data
-newest_date = "2025-05-07"
+newest_date = "2026-08-17"
 
 # Defining Links
 killing_data_link <- paste0("data/killing_data/",newest_date,"/Mapping Police Violence.csv")
@@ -193,9 +193,9 @@ parish_most_total_kill_rate <- killings_rate_demographics %>%
     total_kill_rate = paste0(round(total_kill_rate, 2), " People Killed per 100,000 Residents"),
     black_kill_rate = paste0(round(black_kill_rate, 2), " Black People Killed per 100,000 Black Residents"),
     white_kill_rate = paste0(round(white_kill_rate, 2), " White People Killed per 100,000 White Residents"),
-    ratio_bw = paste0(round(ratio_bw, 2), " Black People Killed per 100,000 Black Residents to 1 White Person Killed per 100,000 White Residents"),
-    ratio_bw = ifelse(ratio_bw %in% c("0 Black People Killed per 100,000 Black Residents to 1 White Person Killed per 100,000 White Residents",
-                    "NA Black People Killed per 100,000 Black Residents to 1 White Person Killed per 100,000 White Residents"),
+    ratio_bw = paste0(round(ratio_bw, 2), " Black People Killed per Black Residents to 1 White Person Killed per White Residents"),
+    ratio_bw = ifelse(ratio_bw %in% c("0 Black People Killed per Black Residents to 1 White Person Killed per White Residents",
+                    "NA Black People Killed per Black Residents to 1 White Person Killed per White Residents"),
                      "", ratio_bw
                      ),
     black_kill_rate = ifelse(black_kill_rate == "0 Black People Killed per 100,000 Black Residents", "", black_kill_rate),
@@ -251,7 +251,6 @@ num_months <- interval(date1, date2) %/% months(1)
 months_no_killing <- num_months - length(unique(format(as.Date(la_killing$date), "%Y-%m")))
 months_killing <- length(unique(format(as.Date(la_killing$date), "%Y-%m")))
 
-
 # Moving Timeline Killings per year by demographic
 race_killing_per_year <- la_killing %>%
   tabyl(year, race) %>%
@@ -283,12 +282,12 @@ ave_age_killed_per_year <- la_killing %>%
   group_by(year) %>%
   summarize(mean_age = mean(age, na.rm = TRUE))
 
-
 # Armed Status Barchart
 arm_status_by_race <- la_killing %>%
   
   # Mutating "allegedly_armed" variable so that any allegation which includes "Allegedly" becomes "Allegedly Armed"
-  mutate(allegedly_armed = ifelse(str_detect(allegedly_armed, "Allegedly"), "Allegedly Armed", allegedly_armed)) %>%
+  mutate(allegedly_armed = str_detect(allegedly_armed_with, "Gun|Edged weapon|Other|Unknown weapon"),
+         allegedly_armed = ifelse(allegedly_armed, "Allegedly Armed with a Gun, Edged Weapon, Unknown, or Other Weapon", "Not Allegedly Armed")) %>%
   tabyl(allegedly_armed, race) %>%
   adorn_totals(where = "col") %>%
   select(allegedly_armed, "Total", "Black", "White", "Hispanic", "Asian", "Unknown Race") %>%
@@ -297,11 +296,8 @@ arm_status_by_race <- la_killing %>%
 # Flee Status Barchart
 fleeing_status <- la_killing %>%
   
-  # Filtering data to post 2014 (this is when fleeing began being recorded)
-  filter(year >= 2015) %>%
-  
   # Creating a "fleeing" variable that defines not fleeing as if "wapo_flee" is empty or is "Not Fleeing"
-  mutate(fleeing = if_else((is.na(wapo_flee) | wapo_flee == "Not Fleeing"), "Not Fleeing", "Fleeing")) %>%
+  mutate(fleeing = if_else((is.na(flee) | flee == "Not Fleeing"), "Not Fleeing", "Fleeing")) %>%
   tabyl(race, fleeing) %>%
   adorn_totals(where = "row") %>%
   arrange(desc('Not Fleeing')) %>%
@@ -314,16 +310,11 @@ pct_fleeing_status <- fleeing_status %>%
 # Violent v Non-Violent
 violent_crime_distribution <- la_killing %>%
   
-  # Filtering data to post 2016 (this is when encounter types began being recorded)
-  filter(year >= 2017) %>%
-  
   # Creating a binary "crime_status", classifications being:  "Violent Crime", "Non-Violent Crime"
-  mutate(crime_status = if_else(encounter_type %in% c("Part 1 Violent Crime", 
-                                                      "Part 1 Violent Crime/Domestic Disturbance"), 
+  mutate(crime_status = if_else(encounter_type %in% c("Part 1 Violent Crime"), 
                                 "Violent Crime", 
-                                "Non-Violent Crime")) %>%
+                                "Mental Health Check, Traffic Stops, and Other Non-violent Encounters and Crimes")) %>%
   tabyl(crime_status)
-
 
 # Counting mental health status groups 
 mental_health <- la_killing %>%
@@ -341,6 +332,8 @@ mental_health <- la_killing %>%
 n_mental_illness = sum(la_killing$signs_of_mental_illness == "Yes", na.rm = TRUE)
 n_drug = sum(la_killing$signs_of_mental_illness == "Drug or Alcohol Use", na.rm = TRUE)
 
+la_killing %>%
+  tabyl(agency_responsible)
 
 # Police Department Graphs
 killings_per_department <- la_killing %>% 
@@ -482,27 +475,39 @@ officer_name = sum(!is.na(la_killing$officer_names))
 charge_status <- la_killing %>%
   
   # Making an binary "officer_charged" variable with categories: "Criminal Charges", "No Known Charges"
-  mutate(officer_charged = if_else(str_detect(tolower(officer_charged), "charged"), 
+  mutate(officer_charged = if_else(!is.na(officer_charged), 
                                    "Criminal Charges", 
                                    "No Known Charges")) %>%
   tabyl(officer_charged)
 
-# Disposition status distribution
+
 disposition_status <- la_killing %>%
   mutate(
-    
-    # Making dispositions lowercase
     disposition_official = tolower(disposition_official),
     
-    # Creating disposition categories
     disposition_fixed = case_when(
-      str_detect(disposition_official, "charged") ~ "Charged",
-      str_detect(disposition_official, "pending|under") ~ "Pending Investigation",
-      str_detect(disposition_official, "justified") ~ "Justified",
-      str_detect(disposition_official, "cleared") ~ "Cleared",
-      str_detect(disposition_official, "family awarded") ~ "Family Awarded Money",
-      str_detect(disposition_official, "unreported") ~ "Unreported",
+      # Criminal outcomes (check convicted/acquitted before generic "charged")
+      str_detect(disposition_official, "convicted") ~ "Officer Convicted",
+      str_detect(disposition_official, "acquitted") ~ "Officer Acquitted",
+      str_detect(disposition_official, "charges dropped|dismissed criminal charges") ~ "Criminal Charges Dropped/Dismissed",
+      str_detect(disposition_official, "charged with a crime") ~ "Officer Charged",
+      str_detect(disposition_official, "did not file criminal charges|did not indict") ~ "No Criminal Charges Filed",
+      
+      # Civil outcomes
+      str_detect(disposition_official, "awarded compensatory damages|reached settlement") ~ "Family Awarded Money/Settlement",
+      str_detect(disposition_official, "found not liable|civil suit dismissed|judge dismissed or blocked civil suit") ~ "Civil Suit Dismissed/Not Liable",
+      str_detect(disposition_official, "civil suit filed|civil rights suit filed") ~ "Civil Suit Filed",
+      
+      # Administrative / review outcomes
+      str_detect(disposition_official, "internal review") ~ "Internal Review: No Discipline",
+      str_detect(disposition_official, "^\\[review\\] justified") ~ "Justified (Review)",
+      
+      # Investigation status
+      str_detect(disposition_official, "pending investigation") ~ "Pending Investigation",
+      
+      # Missing data
       disposition_official %in% c("unknown", NA) ~ "Unknown",
+      
       TRUE ~ disposition_official
     )
   ) %>%
@@ -512,29 +517,12 @@ disposition_status <- la_killing %>%
 
 # Pending distribution per year 
 pending_over_time <- la_killing %>%
-  mutate(
-    
-    # Making dispositions lowercase
-    disposition_official = tolower(disposition_official),
-    
-    # Creating disposition categories
-    disposition_fixed = case_when(
-      str_detect(disposition_official, "charged") ~ "Charged",
-      str_detect(disposition_official, "pending|under") ~ "Pending Investigation",
-      str_detect(disposition_official, "justified") ~ "Justified",
-      str_detect(disposition_official, "cleared") ~ "Cleared",
-      str_detect(disposition_official, "family awarded") ~ "Family Awarded Money",
-      str_detect(disposition_official, "unreported") ~ "Unreported",
-      disposition_official %in% c("unknown", NA) ~ "Unknown",
-      TRUE ~ disposition_official
-    )
-  ) %>%
-  filter(disposition_fixed == "Pending Investigation") %>%
+  mutate(disposition_official = tolower(disposition_official)) %>%
+  filter(str_detect(disposition_official, "pending investigation")) %>%
   tabyl(year) %>%
   select(-percent)
 
 pending_before_2019 = sum(filter(pending_over_time, year <= 2019)$n)/sum(pending_over_time$n)
-
 
 # --------------------- Pushing the data to a spreadsheet ------------------
 
