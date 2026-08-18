@@ -2,7 +2,7 @@
 ![](https://github.com/aclu-national/JL_dashboard/blob/750f780d571485c2c932d4ffbceaf4d256ebe400/image/image.png)
 
 ## Mission
-We built this dashboard as an interactive tool to empower interested citizens, nonprofit organizations, journalists, attorneys, academics, and even law enforcement agencies to explore and compare statewide policing statistics, uncover crucial insights and identify areas needing greater transparency.
+We built this dashboard as an interactive tool to empower interested people, nonprofit organizations, journalists, attorneys, academics, and even law enforcement agencies to explore and compare statewide policing statistics, uncover crucial insights, and identify areas needing greater transparency.
 
 ## Goals
 ### 1. Enhancing Data Accessibility and Stewardship 
@@ -17,41 +17,29 @@ We are committed to holding the police accountable for their actions. This invol
 ## Git Structure
 
 ```
-├── JL_dashboard_shiny
-│   ├── app.R
-│   ├── rsconnect
-
 ├── README.md
-├── VPVL.Rproj
-
+├── VPVL.Rproj                                               
 ├── data
-│   ├── README.md
-│   ├── intake_data
-│   │   └── 2025-01-27
-│   │       └── louisiana_police_misconduct_data_collection.csv
-│   ├── misconduct_data
+│   ├── intake_data                                                     
+│   │   └── 2026-08-17
+│   │       └── louisiana_police_misconduct_data_collection.csv         # Not included in GitHub due to privacy
+│   ├── misconduct_data                                                 # This has not been updated for several years
 │   │   └── 2024-02-27
 │   │       ├── data_agency-reference-list.csv
 │   │       ├── data_allegation.csv
 │   │       ├── data_event.csv
 │   │       ├── data_personnel.csv
 │   │       └── data_post-officer-history.csv
-│   └── overview_data
+│   └── overview_data                                                    # Newer data not included due to size
 │       ├── 2024-02-27
 │       │   └── pe_1960_2022.csv
 │       ├── 2025-01-27
-│       │   └── lee_1960_2023.csv
-│       ├── 35158-0001-Codebook.pdf
-│       └── 35158-0001-Data.rda
-
-├── image
-
+│       └── └── lee_1960_2023.csv
 ├── reference_data
 │   ├── data_years.csv
 │   ├── key_words.csv
 │   ├── misconduct_agency_representation.csv
 │   └── represented.csv
-
 └── scripts
     ├── intake_scripts
     │   └── intake_data_cleaning.R
@@ -85,43 +73,3 @@ Data on known misconduct by police officers were obtained by the [Louisiana Law 
 Please note that the categorization of misconduct allegations, dispositions, and repercussions was carried out by analyzing key word stems, with the aim of standardizing categories across various police department reports. It is important to acknowledge that in certain instances, these classifications may not fully reflect the actual allegations, dispositions, and repercussions due to inconsistent reporting. For a detailed breakdown of our classification methodology, you can refer to this [PDF document](https://github.com/aclu-national/JL_dashboard/blob/main/scripts/misconduct_scripts/allegation_classification/classification_methodology.pdf).
 
 Internal data on misconduct by police officers were obtained by Justice Lab's [Louisiana Police Misconduct Data Collection](https://action.aclu.org/la-misconduct-data-collection) form. This form serves as a data collection tool aimed at enhancing police accountability and monitoring and reporting incidents of police misconduct specifically within Louisiana. This comprehensive approach helps identify patterns, trends, and potential areas of concern, ultimately contributing to a more informed and data-driven effort toward promoting transparency and accountability in law enforcement activities in the state. Data used for this report was downloaded on January 27th, 2025.
-
-
-## Data Cleaning
-### Police Killings
-The process of cleaning police killings includes ([see the code and analysis here](https://github.com/aclu-national/JL_dashboard/blob/4cc81d42c5068be139fd52ce8d21a816b737fda1/scripts/killing_scripts/killing_data_cleaning.R)):
-1. Cleaning the Mapping Police Violence data variable names.
-2. Filtering for police killings in Louisiana.
-3. Creating unknown options for the demographic variables.
-4. Extracting different date, year, and month combinations.
-5. Creating age categories.
-6. Cleaning Parish names and removing duplicate victim names.
-7. Retreiving 2020 Census demographic data for Parishes in Louisiana.
-
-### Overview
-The process of cleaning the overview data includes ([see the code and analysis here](https://github.com/aclu-national/JL_dashboard/blob/3db697133a5cd5b05c3dd88d98bb46816bcb72e9/scripts/overview_scripts/overview_data_cleaning.R)):
-1. Filtering the FBI Crime Data Explorer Employement data for agencies in Louisiana.
-2. Joining the FBI Crime Data Explorer Employement data with Law Enforcement Agency Identifiers Crosswalk data to yeild more complete names.
-3. Cleaning agency names more thoroughly
-
-### Misconduct
-The process of cleaning the misconduct data includes ([see the code and analysis here](https://github.com/aclu-national/JL_dashboard/blob/c57de852d5ce5509d5409c759b3b4a1d252a4bf2/scripts/misconduct_scripts/misconduct_data_cleaning.R)):
-1. Creating a full name variable in the LLEAD personnel data.
-2. Joining the LLEAD personnel data with the LLEAD History ID data via their unique identifiers.
-3. Renaming the repeated officer demographic variables.
-4. Joining the above dataframe with the LLEAD agency location data via the agency names.
-5. Categorizing the agencies.
-6. Cleaning the agency names.
-7. Using regex to categorize the dispositions and actions
-8. Using a multi-label classification model to categorize allegations ([click here to see how we built this model](https://github.com/aclu-national/JL_dashboard/blob/cce003c05222bf8609552bcd951a0afe33cbbde4/scripts/misconduct_scripts/allegation_classification/classification_methodology.pdf)). 
-
-## Data
-- Louisiana Police Misconduct Data Collection: https://action.aclu.org/la-misconduct-data-collection
-- Mapping Police Violence data: https://airtable.com/shroOenW19l1m3w0H/tblxearKzw8W7ViN8
-- LLEAD data: https://hub.wrgl.co/@ipno/r/data (use `data_years.csv` to see the years the data is coming from)
-- FBI Crime Data Explorer Employement data: https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/downloads
-- Law Enforcement Agency Identifiers Crosswalk data: https://www.icpsr.umich.edu/web/ICPSR/studies/35158/datadocumentation#
-- 2020 U.S. Census demographics data: https://data.census.gov/table?g=040XX00US22,22$0500000&y=2020&d=DEC+Redistricting+Data+(PL+94-171)&tid=DECENNIALPL2020.P1
-
-## Visualization
-The vizualizations for this project were primarily creating using [Infogram](https://infogram.com/). The only other visualization used were created through R Shiny and the code is provided in the above. 
