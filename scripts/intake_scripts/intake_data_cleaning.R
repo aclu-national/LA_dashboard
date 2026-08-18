@@ -31,11 +31,10 @@ rename_column_n_to_count <- function(data_frames) {
   return(result)
 }
 
+
 # Loading spreadsheet
 spreadsheet_link <- "https://docs.google.com/spreadsheets/d/1jfkRvr2wW3NXbLCe9FLXVX0TKZIgwXmI1r-d8aQ59Eo/edit?gid=0#gid=0"
 spreadsheet_link2 <- "https://docs.google.com/spreadsheets/d/1kTcgR1G7eqfQNzEK9slOavkEUrukPaDN-qt2U55nhAo/edit?gid=0#gid=0"
-
-
 
 gs4_auth(email = "eappelson@laaclu.org")
 
@@ -62,9 +61,8 @@ parishes_louisiana <- c("Acadia", "Allen", "Ascension", "Assumption", "Avoyelles
 
 
 # Importing data 
-df <- read.csv("data/intake_data/2025-05-07/louisiana_police_misconduct_data_collection.csv", skip = 2, fileEncoding="UTF-16LE", na.strings=c("","NA")) %>%
+df <- read.csv("data/intake_data/2026-08-17/louisiana_police_misconduct_data_collection.csv", skip = 2, fileEncoding="UTF-16LE", na.strings=c("","NA")) %>%
   clean_names() %>%
-  filter(grepl("^\\d{8}$", sid)) %>%
   filter(!(sid %in% 
              c("87360301",
                "89583007",
@@ -84,7 +82,10 @@ df <- read.csv("data/intake_data/2025-05-07/louisiana_police_misconduct_data_col
                "89659039", 
                "89736235", 
                "89057746", 
-               "89659186"))) %>%
+               "89659186", 
+               "100393180",
+               "100547623"
+               ))) %>%
   filter(last_name != "Appelson") %>%
   filter(!(first_name == last_name))
 
